@@ -74,18 +74,18 @@ print("traitement des données démographiques :",time.clock()-time1)
 
 "Création des visuels des données"
 time2=time.clock()
-if not os.path.exists("Delinquance/Visuels"):
-    os.makedirs("Delinquance/Visuels")
+if not os.path.exists("Visuels"):
+    os.makedirs("Visuels")
     
-if not os.path.exists("Delinquance/Visuels/Données"):
-    os.makedirs("Delinquance/Visuels/Données")
+if not os.path.exists("Visuels/Données"):
+    os.makedirs("Visuels/Données")
 
 "préparation de la carte des données totales"
 dict_delinquance_totale=df_Delinquance.sum(axis=1).to_dict()
 carte_delinquance = pygal.maps.fr.Departments(human_readable=True, legend_at_bottom=True)
 carte_delinquance.title = 'Délinquance totale par départements en 2016'
 carte_delinquance.add('données 2016', dict_delinquance_totale)
-carte_delinquance.render_to_file("Delinquance/Visuels/Données/carte_total.svg")
+carte_delinquance.render_to_file("Visuels/Données/carte_total.svg")
 
 "préparation de la carte des données ratios"
 dict_delinquance_ratio=df_Delinquance2.sum(axis=1).to_dict()
@@ -93,7 +93,7 @@ carte_delinquance_ratio = pygal.maps.fr.Departments(human_readable=True, legend_
 carte_delinquance_ratio.title = 'Ratio Délinquance par départements en 2016'
 carte_delinquance_ratio.add('données 2016', dict_delinquance_ratio)
 carte_delinquance_ratio.value_formatter = lambda x: "%.2f" % x
-carte_delinquance_ratio.render_to_file("Delinquance/Visuels/Données/carte_delinquance_ratio.svg")
+carte_delinquance_ratio.render_to_file("Visuels/Données/carte_delinquance_ratio.svg")
 print("Visualisation des données :",time.clock()-time2)
 
 "comparaison des données"
@@ -113,18 +113,17 @@ for val in classement_ratio[:value]:
         tab.append([100-classement_valeur.index(val),100-classement_ratio.index(val),val])
 
 "Visualisation des évolutions"
-plt.axis("off")
-
 fig = plt.figure() 
 ax = fig.add_subplot(1,1,1)
+ax.axis("off")
    
 for x in tab:
     if x[0]>x[1]:
-        ax.plot([x[0],x[1]],'-o',color="red")
+        ax.plot([x[0],x[1]],'--o',color="red")
     elif x[0]==x[1]:
-        ax.plot([x[0],x[1]],'-o',color="black")
+        ax.plot([x[0],x[1]],'--o',color="black")
     else:
-        ax.plot([x[0],x[1]],'-o',color="green")
+        ax.plot([x[0],x[1]],'--o',color="green")
     if x[0]>100-value:
         ax.text(0-.1,x[0]-.1,x[2])
     if x[1]>100-value:
@@ -138,7 +137,7 @@ ax.set_ylim([100-value-1,101])
 ax.axvline(x=0)
 ax.axvline(x=1)
 
-fig.savefig('Delinquance/Visuels/Données/Valeurs_vs_Ratios.png')
+fig.savefig('Visuels/Données/Valeurs_vs_Ratios.png')
 print("Comparaison des données :",time.clock()-time3)
 
 
