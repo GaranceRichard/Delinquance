@@ -25,6 +25,7 @@ import pygal
 import operator
 import matplotlib.pyplot as plt
 import time
+from sklearn import manifold, datasets, decomposition, ensemble, discriminant_analysis, random_projection
 
 
 os.chdir("/home/garance/Bureau/Delinquance")
@@ -140,4 +141,79 @@ ax.axvline(x=1)
 fig.savefig('Visuels/Données/Valeurs_vs_Ratios.png')
 print("Comparaison des données :",time.clock()-time3)
 
+
+"Réduction dimensionnelle"
+time4=time.clock()
+
+if not os.path.exists("Visuels/Réduction"):
+    os.makedirs("Visuels/Réduction")
+
+
+X=df_Delinquance2.values
+y=df_Delinquance2.index
+n_neighbors=5
+
+"standardisation et visualisation"
+def plot_embedding(X,title):
+    x_min, x_max = np.min(X, 0), np.max(X, 0)
+    X = (X - x_min) / (x_max - x_min)
+
+    plt.figure()
+    ax = plt.subplot(111)
+    plt.title(title)
+
+    for i in range(X.shape[0]):
+        plt.text(X[i, 0], X[i, 1], str(y[i]),color="black")
+
+"Différents modèles"        
+rp = random_projection.SparseRandomProjection(n_components=2)
+X_projected = rp.fit_transform(X)
+plot_embedding(X_projected, "Random Projection")
+plt.savefig("Visuels/Réduction/Random_projection.png")
+
+X_pca = decomposition.TruncatedSVD(n_components=2).fit_transform(X)
+plot_embedding(X_pca, "Projection en composentes principales")
+plt.savefig("Visuels/Réduction/ACP.png")
+
+X_iso = manifold.Isomap(n_neighbors, n_components=2).fit_transform(X)
+plot_embedding(X_iso,"Projection Isomap")
+plt.savefig("Visuels/Réduction/Isomap.png")
+
+clf = manifold.LocallyLinearEmbedding(n_neighbors, n_components=2, method='standard')
+X_lle = clf.fit_transform(X)
+plot_embedding(X_lle,"LLE" )
+plt.savefig("Visuels/Réduction/LLE.png")
+
+clf = manifold.LocallyLinearEmbedding(n_neighbors, n_components=2, method='modified')
+X_mlle = clf.fit_transform(X)
+plot_embedding(X_mlle,"LLE modifiée")
+plt.savefig("Visuels/Réduction/LLE modifiée.png")
+
+clf = manifold.LocallyLinearEmbedding(n_neighbors, n_components=2, method='hessian')
+X_hlle = clf.fit_transform(X)
+plot_embedding(X_hlle,"LLE Hessian")
+plt.savefig("Visuels/Réduction/LLE Hessian.png")
+
+clf = manifold.MDS(n_components=2, n_init=1, max_iter=100)
+X_mds = clf.fit_transform(X)
+plot_embedding(X_mds,"MDS")
+plt.savefig("Visuels/Réduction/MDS.png")
+
+hasher = ensemble.RandomTreesEmbedding(n_estimators=100)
+X_transformed = hasher.fit_transform(X)
+pca = decomposition.TruncatedSVD(n_components=2)
+X_reduced = pca.fit_transform(X_transformed)
+plot_embedding(X_reduced, "Random forest")
+plt.savefig("Visuels/Réduction/Random Forest.png")
+
+embedder = manifold.SpectralEmbedding(n_components=2, random_state=0, eigen_solver="arpack")
+X_se = embedder.fit_transform(X)
+plot_embedding(X_se, "Spectral embedding")
+plt.savefig("Visuels/Réduction/Spectral embedding.png")
+
+tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
+X_tsne = tsne.fit_transform(X)
+plot_embedding(X_tsne, "t-SNE")
+plt.savefig("Visuels/Réduction/t-SNE.png")
+print("Réduction dimensionnelle :",time.clock()-time4)
 
