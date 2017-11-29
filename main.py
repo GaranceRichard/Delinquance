@@ -23,11 +23,13 @@ import numpy as np
 import os
 import pygal
 import operator
+import matplotlib.pyplot as plt
 
-os.chdir("/home/garance/Bureau/Delinquance/Data")
+
+os.chdir("/home/garance/Bureau/Delinquance")
 
 sheets=[x for x in range (3,104)]
-dict_of_df=pd.read_excel("Tableaux_4001_TS.xlsx",sheet_name=sheets)
+dict_of_df=pd.read_excel("Data/Tableaux_4001_TS.xlsx",sheet_name=sheets)
 
 array_travail = np.empty(1284,)
 
@@ -47,7 +49,7 @@ array_travail=np.delete(array_travail,0,0)
 
 
 "acquisition des données démographiques départements 2016"        
-df=pd.read_excel("estim-pop-dep-sexe-gca-1975-2016.xls",sheet_name=1)
+df=pd.read_excel("Data/estim-pop-dep-sexe-gca-1975-2016.xls",sheet_name=1)
 df=df.drop([0,1,2,3,100,106,107,108,109])
 df.columns=[x for x in range(20)]
 df=df[[0,1,13]]
@@ -82,21 +84,21 @@ carte_delinquance_ratio.value_formatter = lambda x: "%.2f" % x
 carte_delinquance_ratio.render_in_browser()
 carte_delinquance_ratio.render_to_file("/home/garance/Bureau/Delinquance/visuels/carte_delinquance_ratio.svg")
 
+
 "comparaison des données"
+
+"préparation des données"
 classement_valeur = [i[0] for i in sorted(dict_delinquance_totale.items(), key=operator.itemgetter(1), reverse=True)]
 classement_ratio = [i[0] for i in sorted(dict_delinquance_ratio.items(), key=operator.itemgetter(1), reverse=True)]
 
-
-# = pd.DataFrame({"valeur":classement_valeur,"ratio":classement_ratio})
-import matplotlib.pyplot as plt
 tab=[]
-
 for val in classement_valeur[:10]:  
     tab.append([100-classement_valeur.index(val),100-classement_ratio.index(val),val])
 for val in classement_ratio[:10]:
     if [100-classement_valeur.index(val),100-classement_ratio.index(val)] not in tab:
         tab.append([100-classement_valeur.index(val),100-classement_ratio.index(val),val])
 
+"Visualisation"
 fig = plt.figure() 
 plt.axis("off")
 ax = fig.add_subplot(1,1,1)
@@ -115,13 +117,11 @@ for x in tab:
 
 ax.text(0-.1,101.1,"Données valeurs")
 ax.text(1-.1,101.1,"Données ratios")
-ax.text(.1,103,"Comparaison des classements",fontsize=15)
-ax.text(.25,102,"valeurs versus ratio",fontsize=15)
+ax.text(.25,102,"Valeurs versus ratio",fontsize=15)
 
 ax.set_ylim([90,101])
 ax.axvline(x=0)
 ax.axvline(x=1)
 
-os.chdir("/home/garance/Bureau/Delinquance/visuels")
-fig.savefig('test.png')
+fig.savefig('visuels/Valeurs_vs_Ratios.png')
 
