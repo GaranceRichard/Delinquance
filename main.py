@@ -25,8 +25,11 @@ import pygal
 import operator
 import matplotlib.pyplot as plt
 import time
-from sklearn import manifold, datasets, decomposition, ensemble, discriminant_analysis, random_projection
 
+from matplotlib import cm
+from sklearn import manifold, datasets, decomposition, ensemble, discriminant_analysis, random_projection
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 
 os.chdir("/home/garance/Bureau/Delinquance")
 
@@ -151,7 +154,7 @@ if not os.path.exists("Visuels/Réduction"):
 
 X=df_Delinquance2.values
 y=df_Delinquance2.index
-n_neighbors=5
+n_neighbors=11
 
 "standardisation et visualisation"
 def plot_embedding(X,title):
@@ -213,7 +216,37 @@ plt.savefig("Visuels/Réduction/Spectral embedding.png")
 
 tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
 X_tsne = tsne.fit_transform(X)
-plot_embedding(X_tsne, "t-SNE")
+plot_embedding(X_tsne, "TNSE")
+
+
 plt.savefig("Visuels/Réduction/t-SNE.png")
 print("Réduction dimensionnelle :",time.clock()-time4)
 
+
+"Clusterisation"
+val = []
+lamda = []
+reducers = {"Random projection":X_projected, "Projection en composentes principales":X_pca, "Isomap":X_iso, "LLE":X_lle, "LLE Modifiée":X_mlle, "LLE Hessian": X_hlle, "MDS":X_mds,"Random Forrest":X_reduced, "t-SNE":X_tsne}
+for key,value in reducers.items():
+    x_min, x_max = np.min(value, 0), np.max(value, 0)
+    reducer = (value - x_min) / (x_max - x_min)
+    for x in range(5,20):
+        clusterer = KMeans(n_clusters=x, random_state=10)
+        cluster_labels = clusterer.fit_predict(reducer)
+        score = silhouette_score(reducer,cluster_labels)
+        print("for ",x,"clusters, silhouette score = ",score)
+        
+        fig=plt.figure(figsize=(10,5))
+        ax=fig.add_subplot(111)
+        p=ax.scatter(X_tsne[:,0],X_tsne[:,1],c=cluster_labels,cmap=cm.Set1)
+        fig.colorbar(p)
+        plt.show()
+        val.append(x)
+        lamda.append(score)
+    
+    
+    plt.plot(val,lamda)
+    plt.title(key)
+    plt.show()
+    val=[]
+    lamda=[]
