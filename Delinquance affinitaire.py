@@ -23,10 +23,12 @@ from sklearn.metrics import silhouette_score
 from mpl_toolkits.mplot3d import Axes3D
 from plotly.offline import download_plotlyjs, init_notebook_mode,  plot
 
-api=private.api_key
 init_notebook_mode()
+api=private.api_key
+username=private.username
+
 os.chdir("/home/garance/Bureau/Delinquance")
-plotly.tools.set_credentials_file(username='GaranceR', api_key=api)
+plotly.tools.set_credentials_file(username=username, api_key=api)
 
 
 "Récupération des données"
@@ -34,9 +36,9 @@ time0=time.clock()
 sheets=[x for x in range (3,104)]
 dict_of_df=pd.read_excel("Data/Tableaux_4001_TS.xlsx",sheet_name=sheets)
 
-array_travail = np.empty(1284,)
 
 "récupération des id comme titre de future colonnes"
+array_travail = np.empty(1284,)
 final_columns=[]
 for libelle in dict_of_df[4]["libellé index"].tolist():
     for t in range(1,13):
@@ -59,12 +61,14 @@ df.columns=[x for x in range(20)]
 df=df[[0,1,13]]
 df=df.set_index([0])
 df.columns=["nom","population"]
-    
+
+
 "array de travail devient DataFrame pandas"
 df_Delinquance=pd.DataFrame(array_travail)
 "récupération des index départementaux"
 df_Delinquance.index=df.index
 df_Delinquance.columns=final_columns
+
     
 "les données brutes deviennent ratios en pour 1000"
 df_Delinquance2=df_Delinquance.astype('float').div(df['population'].astype('float'),axis='index')
@@ -72,11 +76,12 @@ df_Delinquance2=df_Delinquance2*1000
 print("traitement des données démographiques :",time.clock()-time1)
 
 
+
 "Création des visuels des données"
 time2=time.clock()
+
 if not os.path.exists("Visuels"):
-    os.makedirs("Visuels")
-    
+    os.makedirs("Visuels")   
 if not os.path.exists("Visuels/Données"):
     os.makedirs("Visuels/Données")
 
@@ -96,10 +101,11 @@ carte_delinquance_ratio.value_formatter = lambda x: "%.2f" % x
 carte_delinquance_ratio.render_to_file("Visuels/Données/carte_delinquance_ratio.svg")
 print("Visualisation des données :",time.clock()-time2)
 
+
 "comparaison des données"
 time3=time.clock()
-"préparation des données"
 
+"préparation des données"
 classement_valeur = [i[0] for i in sorted(dict_delinquance_totale.items(), key=operator.itemgetter(1), reverse=True)]
 classement_ratio = [i[0] for i in sorted(dict_delinquance_ratio.items(), key=operator.itemgetter(1), reverse=True)]
 
@@ -111,6 +117,7 @@ for val in classement_valeur[:value]:
 for val in classement_ratio[:value]:
     if [100-classement_valeur.index(val),100-classement_ratio.index(val)] not in tab:
         tab.append([100-classement_valeur.index(val),100-classement_ratio.index(val),val])
+
 
 "Visualisation des évolutions"
 fig = plt.figure() 
@@ -211,14 +218,11 @@ def plot_embedding(value,key):
     plt.savefig(chemin)
     plt.close()
     
-    
-    
     plot_map(X_projected,key,score)
 
     print("\t\t"+str(key)+" : "+str(time.clock()-time5))
     
     
-
 def plot_map(value,key,score):
     global df_Cluster
     clusterer = AffinityPropagation()
