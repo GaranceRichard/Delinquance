@@ -29,7 +29,7 @@ import time
 from matplotlib import cm
 from sklearn import manifold, datasets, decomposition, ensemble, discriminant_analysis, random_projection
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score 
 from mpl_toolkits.mplot3d import Axes3D
 
 os.chdir("/home/garance/Bureau/Delinquance")
@@ -149,7 +149,6 @@ print("Comparaison des données :",time.clock()-time3)
 
 "Réduction dimensionnelle et Clusterization"
 time4=time.clock()
-plt.set_cmap('Set1')
 
 if not os.path.exists("Visuels/Réduction"):
     os.makedirs("Visuels/Réduction")
@@ -157,25 +156,32 @@ if not os.path.exists("Visuels/Réduction"):
 if not os.path.exists("Visuels/Clusters"):
     os.makedirs("Visuels/Clusters")
 
+"Variables types"
+plt.set_cmap('Set1')
 X=df_Delinquance2.values
 y=df_Delinquance2.index
-n_neighbors=11
+n_neighbors=10
 level=3
+np.seterr(divide='ignore', invalid='ignore')
+silhouette_ref = 0
 
 def plot_embedding(value,key):
-    val=lamda=[]    
+    global choice, silhouette_ref, choicerep   
+    time5=time.clock()
+    val=[]
+    lamda=[]    
     "standardisation"    
     x_min, x_max = np.min(value, 0), np.max(value, 0)
     reducer = (value - x_min) / (x_max - x_min)
     "clusterisation"    
-    for repeat in range(6,18):
-        clusterer = KMeans(n_clusters=repeat, random_state=10)
+    for repeat in range(10,14):
+        clusterer = KMeans(n_clusters=repeat)
         cluster_labels = clusterer.fit_predict(reducer)
         score = silhouette_score(reducer,cluster_labels)
         X_projected=reducer
         title=str(key)+" for "+str(repeat)+" clusters, silhouette score = "+str(score)
         
-        fig = plt.figure(figsize=(10,5))
+        fig = plt.figure(figsize=(20,10))
         fig.suptitle(title, fontsize=15)        
         ax = fig.add_subplot(111, projection='3d')
         coulour=cluster_labels
@@ -190,76 +196,84 @@ def plot_embedding(value,key):
         chemin="Visuels/Clusters/"+str(key)+str(repeat)+".png"
         plt.savefig(chemin)
         plt.close()
+        plot_map(X_projected,key,repeat)
         
         
         val.append(repeat)
         lamda.append(score)
+        
+            
     
+    chemin = "Visuels/Réduction/"+str(key)+".png"
     plt.plot(val,lamda)
     plt.title(key)
+    plt.savefig(chemin)
+    plt.close()
+    print("\t\t"+str(key)+" : "+str(time.clock()-time5))
+    
+    
 
+def plot_map(value,key,nb_clust):
+    nb_clust=nb_clust
+    clusterer = KMeans(n_clusters=nb_clust)
+    cluster_labels = clusterer.fit_predict(value)
+    df_Cluster = pd.DataFrame(cluster_labels, columns=["Cluster"])
+    df_Cluster.index=df_Delinquance2.index
+    cluster_map = pygal.maps.fr.Departments()
+    map_title= 'Carte clusterisée des départements par '+str(key)
+    cluster_map.title = map_title
+    for cluster in range(nb_clust):
+        departements = df_Cluster[df_Cluster['Cluster'] == cluster].index.tolist()
+        cluster_map.add("Cluster "+str(cluster+1),departements)
+    cluster_map.render_in_browser()
 
-"Différents modèles"        
+"Différents modèles"
+print("\t traitement des modèles :")
+
+from sklearn import preprocessing
+std_scale = preprocessing.StandardScaler().fit(X)
+X = std_scale.transform(X)
+   
 rp = random_projection.SparseRandomProjection(n_components=level)
 X_projected = rp.fit_transform(X)
 plot_embedding(X_projected, "Random Projection")
-plt.savefig("Visuels/Réduction/Random_projection.png")
-plt.close()
 
 X_pca = decomposition.TruncatedSVD(n_components=level).fit_transform(X)
 plot_embedding(X_pca, "Projection en composentes principales")
-plt.savefig("Visuels/Réduction/ACP.png")
-plt.close()
 
 X_iso = manifold.Isomap(n_neighbors, n_components=level).fit_transform(X)
 plot_embedding(X_iso,"Projection Isomap")
-plt.savefig("Visuels/Réduction/Isomap.png")
-plt.close()
 
 clf = manifold.LocallyLinearEmbedding(n_neighbors, n_components=level, method='standard')
 X_lle = clf.fit_transform(X)
 plot_embedding(X_lle,"LLE" )
-plt.savefig("Visuels/Réduction/LLE.png")
-plt.close()
 
 clf = manifold.LocallyLinearEmbedding(n_neighbors, n_components=level, method='modified')
 X_mlle = clf.fit_transform(X)
 plot_embedding(X_mlle,"LLE modifiée")
-plt.savefig("Visuels/Réduction/LLE modifiée.png")
-plt.close()
 
 clf = manifold.LocallyLinearEmbedding(n_neighbors, n_components=level, method='hessian')
 X_hlle = clf.fit_transform(X)
 plot_embedding(X_hlle,"LLE Hessian")
-plt.savefig("Visuels/Réduction/LLE Hessian.png")
-plt.close()
 
 clf = manifold.MDS(n_components=level, n_init=1, max_iter=100)
 X_mds = clf.fit_transform(X)
 plot_embedding(X_mds,"MDS")
-plt.savefig("Visuels/Réduction/MDS.png")
-plt.close()
 
 hasher = ensemble.RandomTreesEmbedding(n_estimators=100)
 X_transformed = hasher.fit_transform(X)
 pca = decomposition.TruncatedSVD(n_components=level)
 X_reduced = pca.fit_transform(X_transformed)
 plot_embedding(X_reduced, "Random forest")
-plt.savefig("Visuels/Réduction/Random Forest.png")
-plt.close()
 
 embedder = manifold.SpectralEmbedding(n_components=level, random_state=0, eigen_solver="arpack")
 X_se = embedder.fit_transform(X)
 plot_embedding(X_se, "Spectral embedding")
-plt.savefig("Visuels/Réduction/Specral tembedding.png")
 
 tsne = manifold.TSNE(n_components=level, init='pca', random_state=0)
 X_tsne = tsne.fit_transform(X)
 plot_embedding(X_tsne, "t-SNE")
-plt.savefig("Visuels/Réduction/t-SNE.png")
-plt.close()
 
-print("Réduction dimensionnelle :",time.clock()-time4)
-plt.close()
+print("Réduction dimensionnelle et clustering :",time.clock()-time4)
 
 
