@@ -27,7 +27,7 @@ init_notebook_mode()
 api=private.api_key
 username=private.username
 
-os.chdir("/home/garance/Bureau/Delinquance")
+os.chdir("/home/garance/Bureau/Projets/Delinquance")
 plotly.tools.set_credentials_file(username=username, api_key=api)
 
 
@@ -166,7 +166,6 @@ np.seterr(divide='ignore', invalid='ignore')
 silhouette_ref = 0
 
 def plotly_embedding(value,key):
-    global choice, silhouette_ref, choicerep   
     time5=time.clock()  
     "standardisation"    
     x_min, x_max = np.min(value, 0), np.max(value, 0)
@@ -175,18 +174,15 @@ def plotly_embedding(value,key):
 
     clusterer = AffinityPropagation()
     cluster_labels = clusterer.fit_predict(reducer)
-    score = silhouette_score(reducer,cluster_labels)
     X_projected=reducer
-    plottitle=str(key)+", clusters, silhouette score = "+str(score)
-    
     x, y, z = np.random.multivariate_normal(np.array([0,0,0]), np.eye(3), 400).transpose()
     trace1 = go.Scatter3d(x=X_projected[:,0],y=X_projected[:,1],z=X_projected[:,2], mode='markers',
-        marker=dict(size=12,color=cluster_labels, colorscale='Viridis', opacity=0.8))
+        marker=dict(size=12,color=cluster_labels, colorscale='Paired', opacity=0.8))
     
     data = [trace1]
-    layout = go.Layout(title=[plottitle],margin=dict(l=0,r=0,b=0,t=0))
+    layout = go.Layout(title="TSNE",margin=dict(l=0,r=0,b=0,t=0))
     fig = dict(data=data, layout=layout)
-    plot(fig)   
+    plot(fig)
     
 def plot_embedding(value,key):
     global choice, silhouette_ref, choicerep   
@@ -224,7 +220,6 @@ def plot_embedding(value,key):
     
     
 def plot_map(value,key,score):
-    global df_Cluster
     clusterer = AffinityPropagation()
     cluster_labels = clusterer.fit_predict(value)
     df_Cluster = pd.DataFrame(cluster_labels, columns=["Cluster"])
@@ -240,10 +235,6 @@ def plot_map(value,key,score):
 
 "Différents modèles"
 print("\t traitement des modèles :")
-
-from sklearn import preprocessing
-std_scale = preprocessing.StandardScaler().fit(X)
-X = std_scale.transform(X)
    
 rp = random_projection.SparseRandomProjection(n_components=level)
 X_projected = rp.fit_transform(X)
@@ -285,6 +276,7 @@ plotly_embedding(X_se,"Spectral embedding")
 tsne = manifold.TSNE(n_components=level, init='pca', random_state=0)
 X_tsne = tsne.fit_transform(X)
 plot_embedding(X_tsne, "t-SNE")
+
 
 
 print("Réduction dimensionnelle et clustering :",time.clock()-time4)
